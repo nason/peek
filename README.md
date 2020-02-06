@@ -1,3 +1,3 @@
-# Peek Command Line Tool
+# FeaturePeek Command Line Tool
 
-Work in progress
+🚧 Work in progress 🚧
