@@ -35,6 +35,7 @@ import (
 	"github.com/mholt/archiver/v3"
 	"github.com/spf13/cobra"
 	"gopkg.in/src-d/go-git.v4"
+	"gopkg.in/src-d/go-git.v4/plumbing"
 	"gopkg.in/src-d/go-git.v4/plumbing/transport"
 
 	homedir "github.com/mitchellh/go-homedir"
@@ -94,6 +95,14 @@ var rootCmd = &cobra.Command{
 
 		sha := headRef.Hash().String()
 		branch := headRef.Name().Short()
+		originRev, err := r.ResolveRevision(plumbing.Revision("refs/remotes/origin/" + branch))
+		if err != nil {
+			log.Fatalf("Error: local branch does not match origin - %s", err)
+		}
+
+		if originRev.String() != sha {
+			log.Fatal("Error: origin branch does not match local branch. You may need to push your changes.")
+		}
 
 		remote, err := r.Remote("origin")
 		if err != nil {
@@ -115,22 +124,6 @@ var rootCmd = &cobra.Command{
 		splitSlug := strings.Split(slug, "/")
 		org := splitSlug[0]
 		repo := splitSlug[1]
-
-		// Branch must be present in remote
-		refs, err := remote.List(&git.ListOptions{})
-		if err != nil {
-			log.Fatalf("Error listing refs at origin: %v", err)
-		}
-		branchInRemote := false
-		for _, ref := range refs {
-			if ref.Name().Short() == branch {
-				branchInRemote = true
-				break
-			}
-		}
-		if !branchInRemote {
-			log.Fatal("Current branch must exist at origin.")
-		}
 
 		// Archive web asset directory
 		files, err := ioutil.ReadDir(assetPath)
