@@ -147,6 +147,7 @@ var rootCmd = &cobra.Command{
 		if err != nil {
 			log.Fatal(err)
 		}
+		defer file.Close()
 
 		body := &bytes.Buffer{}
 		writer := multipart.NewWriter(body)
@@ -169,23 +170,29 @@ var rootCmd = &cobra.Command{
 		request, err := http.NewRequest("POST", "https://api.dev.featurepeek.com/api/v1/peek", body)
 		request.Header.Add("authorization", fmt.Sprintf("Bearer %s", tokens.AccessToken))
 		request.Header.Set("Content-Type", writer.FormDataContentType())
-		fmt.Printf("%+v\n", request)
+		if debug {
+			fmt.Printf("%+v\n", request)
+		}
+
 		response, err := http.DefaultClient.Do(request)
 		if err != nil {
 			log.Fatal(err)
 		}
+
 		body = &bytes.Buffer{}
+		defer response.Body.Close()
 		_, err = body.ReadFrom(response.Body)
 		if err != nil {
 			log.Fatal(err)
 		}
-		response.Body.Close()
-		fmt.Println(response.StatusCode)
-		fmt.Println(response.Header)
+		if debug {
+			fmt.Println(response.StatusCode)
+			fmt.Println(response.Header)
+		}
+		fmt.Println("Assets uploaded successfully!\nVisit your new feature environment here:")
 		fmt.Println(body)
 
 		// Clean up artifacts archive
-		file.Close()
 		err = os.Remove("artifacts.tar.gz")
 		if err != nil {
 			os.Exit(1)
