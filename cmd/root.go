@@ -42,6 +42,8 @@ import (
 	"github.com/spf13/viper"
 )
 
+const releaseVersion = "v0.2-alpha.4"
+
 const peekCommandLongDesc = `peek is a command-line tool for interacting with FeaturePeek environments.
 
 The FeaturePeek CLI enables front-end developers, designers, and product owners to interact with and review your changes
@@ -169,6 +171,7 @@ var rootCmd = &cobra.Command{
 
 		request, err := http.NewRequest("POST", "https://api.dev.featurepeek.com/api/v1/peek", body)
 		request.Header.Add("authorization", fmt.Sprintf("Bearer %s", tokens.AccessToken))
+		request.Header.Add("X-FEATUREPEEK-CLIENT", releaseVersion)
 		request.Header.Set("Content-Type", writer.FormDataContentType())
 		if debug {
 			fmt.Printf("%+v\n", request)
