@@ -20,10 +20,10 @@ type Auth struct {
 }
 
 // Save will marshall and save the auth in json to disk
-func (a Auth) Save() error {
+func (a Auth) Save() (err error) {
 	home, err := homedir.Dir()
 	if err != nil {
-		return err
+		return
 	}
 	path := filepath.Join(home, ".config", "peek")
 	os.MkdirAll(path, 0755)
@@ -31,17 +31,17 @@ func (a Auth) Save() error {
 
 	data, err := json.Marshal(a)
 	if err != nil {
-		return err
+		return
 	}
 
 	if err = ioutil.WriteFile(tokensPath, data, 0600); err != nil {
-		return err
+		return
 	}
-	return nil
+	return
 }
 
 // LoadFromFile attempts to populate an Auth object from the tokens.json file.
-func LoadFromFile() Auth {
+func LoadFromFile() (tokens *Auth) {
 	home, err := homedir.Dir()
 	if err != nil {
 		log.Fatal(err)
@@ -57,10 +57,8 @@ func LoadFromFile() Auth {
 		}
 	}
 
-	var tokens Auth
-	if err = json.Unmarshal(data, &tokens); err != nil {
+	if err = json.Unmarshal(data, tokens); err != nil {
 		log.Fatal(err)
 	}
-
-	return tokens
+	return
 }

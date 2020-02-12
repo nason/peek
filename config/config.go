@@ -23,7 +23,7 @@ type Config struct {
 }
 
 // Save will marshal and save the peek.yml config to disk
-func (c Config) Save() error {
+func (c Config) Save() (err error) {
 	fullConfigFile := configFile
 	// fullConfigFile, err := GetConfigFilePath()
 	// if err != nil {
@@ -32,14 +32,14 @@ func (c Config) Save() error {
 
 	data, err := yaml.Marshal(c)
 	if err != nil {
-		return err
+		return
 	}
 
 	if err = ioutil.WriteFile(fullConfigFile, data, 0644); err != nil {
-		return err
+		return
 	}
 
-	return nil
+	return
 }
 
 // LoadFromFile attempts to populate a Config object from the peek.yml file.
