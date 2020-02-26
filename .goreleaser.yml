@@ -1,25 +1,52 @@
 project_name: peek
 
+#release:
+#  prerelease: auto
+
 before:
   hooks:
-    - go mod download
+    - go mod tidy
+
 builds:
-- env:
-  - CGO_ENABLED=0
+  - id: macos
+    goos: [darwin]
+    goarch: [amd64]
+  - id: linux
+    goos: [linux]
+    goarch: [386, amd64]
+
 archives:
-- replacements:
-    darwin: Darwin
-    linux: Linux
-    windows: Windows
-    386: i386
-    amd64: x86_64
-checksum:
-  name_template: 'checksums.txt'
-snapshot:
-  name_template: "{{ .Tag }}-next"
+  - id: nix
+    builds: [macos, linux]
+    wrap_in_directory: true
+    replacements:
+      darwin: macOS
+      linux: Linux
+      386: i386
+
 changelog:
   sort: asc
   filters:
     exclude:
     - '^docs:'
     - '^test:'
+
+brews:
+  - name: peek
+    github:
+      owner: featurepeek
+      name: homebrew-tap
+    #skip_upload: auto
+    description: FeaturePeek Command-line Tool
+    homepage: https://github.com/featurepeek/peek
+    folder: Formula
+    custom_block: |
+      head do
+        url "https://github.com/featurepeek/peek.git"
+        depends_on "go"
+      end
+    test: |
+      help_text = shell_output("#{bin}/peek --help")
+      assert_includes help_text, "Usage:"
+    install: |
+      system "go", "build", *std_go_args
