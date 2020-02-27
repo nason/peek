@@ -8,10 +8,14 @@ before:
     - go mod tidy
 
 builds:
-  - id: macos
+  - <<: &build_defaults
+      ldflags:
+        - -s -w -X peek/cmd.Version={{.Version}}
+    id: macos
     goos: [darwin]
     goarch: [amd64]
-  - id: linux
+  - <<: *build_defaults
+    id: linux
     goos: [linux]
     goarch: [386, amd64]
 
