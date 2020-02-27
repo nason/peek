@@ -30,6 +30,7 @@ import (
 	"path/filepath"
 	"peek/auth"
 	"peek/config"
+	"runtime/debug"
 	"strings"
 
 	"github.com/mholt/archiver/v3"
@@ -42,7 +43,43 @@ import (
 	"github.com/spf13/viper"
 )
 
-const releaseVersion = "v0.2-alpha.4"
+// Version is dynamically set by the toolchain.
+var Version = "DEV"
+
+var versionOutput = ""
+
+func init() {
+	cobra.OnInitialize(initConfig)
+
+	if Version == "DEV" {
+		if info, ok := debug.ReadBuildInfo(); ok && info.Main.Version != "(devel)" {
+			Version = info.Main.Version
+		}
+	}
+	Version = strings.TrimPrefix(Version, "v")
+	rootCmd.Version = Version
+	rootCmd.AddCommand(versionCmd)
+	versionOutput = fmt.Sprintf("peek version %s", rootCmd.Version)
+
+	// Here you will define your flags and configuration settings.
+	// Cobra supports persistent flags, which, if defined here,
+	// will be global for your application.
+
+	rootCmd.PersistentFlags().StringVar(&cfgFile, "config", "", "config file (default is $HOME/.peek.yaml)")
+	rootCmd.PersistentFlags().BoolVar(&debugFlag, "debug", false, "debug output")
+
+	// Cobra also supports local flags, which will only run
+	// when this action is called directly.
+	rootCmd.Flags().BoolP("toggle", "t", false, "Help message for toggle")
+}
+
+var versionCmd = &cobra.Command{
+	Use:    "version",
+	Hidden: true,
+	Run: func(cmd *cobra.Command, args []string) {
+		fmt.Println(versionOutput)
+	},
+}
 
 const peekCommandLongDesc = `peek is a command-line tool for interacting with FeaturePeek environments.
 
@@ -57,7 +94,7 @@ Make sure your code pushed to your remote and run your build step.
 Then run ` + "`peek`" + ` to launch your FeaturePeek environment.`
 
 var cfgFile string
-var debug bool
+var debugFlag bool
 
 // rootCmd represents the base command when called without any subcommands
 var rootCmd = &cobra.Command{
@@ -171,9 +208,9 @@ var rootCmd = &cobra.Command{
 
 		request, err := http.NewRequest("POST", "https://api.dev.featurepeek.com/api/v1/peek", body)
 		request.Header.Add("authorization", fmt.Sprintf("Bearer %s", tokens.AccessToken))
-		request.Header.Add("X-FEATUREPEEK-CLIENT", releaseVersion)
+		request.Header.Add("X-FEATUREPEEK-CLIENT", Version)
 		request.Header.Set("Content-Type", writer.FormDataContentType())
-		if debug {
+		if debugFlag {
 			fmt.Printf("%+v\n", request)
 		}
 
@@ -188,7 +225,7 @@ var rootCmd = &cobra.Command{
 		if err != nil {
 			log.Fatal(err)
 		}
-		if debug {
+		if debugFlag {
 			fmt.Println(response.StatusCode)
 			fmt.Println(response.Header)
 		}
@@ -211,21 +248,6 @@ func Execute() {
 		fmt.Println(err)
 		os.Exit(1)
 	}
-}
-
-func init() {
-	cobra.OnInitialize(initConfig)
-
-	// Here you will define your flags and configuration settings.
-	// Cobra supports persistent flags, which, if defined here,
-	// will be global for your application.
-
-	rootCmd.PersistentFlags().StringVar(&cfgFile, "config", "", "config file (default is $HOME/.peek.yaml)")
-	rootCmd.PersistentFlags().BoolVar(&debug, "debug", false, "debug output")
-
-	// Cobra also supports local flags, which will only run
-	// when this action is called directly.
-	rootCmd.Flags().BoolP("toggle", "t", false, "Help message for toggle")
 }
 
 // initConfig reads in config file and ENV variables if set.

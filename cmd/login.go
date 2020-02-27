@@ -44,7 +44,7 @@ func auth0PostForm(reqPath string, data url.Values) (int, []byte, error) {
 
 	reqURL := fmt.Sprintf("%s/oauth%s", auth0BaseURL, reqPath)
 
-	if debug {
+	if debugFlag {
 		fmt.Printf("-Request-\nurl -> %s\ndata -> %s\n\n", reqURL, data)
 	}
 
@@ -59,7 +59,7 @@ func auth0PostForm(reqPath string, data url.Values) (int, []byte, error) {
 		return 0, nil, err
 	}
 
-	if debug {
+	if debugFlag {
 		fmt.Printf("-Response-\nObj -> %+v\nbody -> %s\n\n", *res, body)
 	}
 
