@@ -211,6 +211,7 @@ func loginCommand(cmd *cobra.Command, args []string) {
 	spinnerTicker.Stop()
 	spinnerDone <- true
 
+	// verify jwt
 	var tokens auth.Auth
 	if err = json.Unmarshal(tokenBody, &tokens); err != nil {
 		log.Fatal(err)
@@ -246,14 +247,4 @@ to quickly create a Cobra application.`,
 
 func init() {
 	rootCmd.AddCommand(loginCmd)
-
-	// Here you will define your flags and configuration settings.
-
-	// Cobra supports Persistent Flags which will work for this command
-	// and all subcommands, e.g.:
-	// loginCmd.PersistentFlags().String("foo", "", "A help for foo")
-
-	// Cobra supports local flags which will only run when this command
-	// is called directly, e.g.:
-	// loginCmd.Flags().BoolP("toggle", "t", false, "Help message for toggle")
 }
