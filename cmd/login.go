@@ -36,11 +36,27 @@ import (
 	jose "gopkg.in/square/go-jose.v2"
 )
 
-const auth0BaseURL = "https://featurepeek-dev.auth0.com"
+const devAuth0BaseURL = "https://featurepeek-dev.auth0.com"
+const prodAuth0BaseURL = "https://login.featurepeek.com"
+const devClientID = "XnNVx0nzQSJdY6ksPGTnnciuGOM8kXsT"
+const prodClientID = "oB2RkLUylDTrsSxVa6qdLR3DQMbdh9IR"
+
+var clientID string
+var auth0BaseURL string
 
 func auth0PostForm(reqPath string, data url.Values) (int, []byte, error) {
-	const clientID = "XnNVx0nzQSJdY6ksPGTnnciuGOM8kXsT"
+	if devFlag {
+		clientID = devClientID
+	} else {
+		clientID = prodClientID
+	}
 	data.Set("client_id", clientID)
+
+	if devFlag {
+		auth0BaseURL = devAuth0BaseURL
+	} else {
+		auth0BaseURL = prodAuth0BaseURL
+	}
 
 	reqURL := fmt.Sprintf("%s/oauth%s", auth0BaseURL, reqPath)
 
@@ -67,6 +83,12 @@ func auth0PostForm(reqPath string, data url.Values) (int, []byte, error) {
 }
 
 func auth0Get(reqPath string) ([]byte, error) {
+	if devFlag {
+		auth0BaseURL = devAuth0BaseURL
+	} else {
+		auth0BaseURL = prodAuth0BaseURL
+	}
+
 	u, err := url.Parse(auth0BaseURL)
 	if err != nil {
 		return nil, err
@@ -89,9 +111,15 @@ func fileExists(filename string) bool {
 }
 
 func loginCommand(cmd *cobra.Command, args []string) {
+	var oauthAudience string
+	if devFlag {
+		oauthAudience = "http://api.dev.featurepeek.com/api/v1/"
+	} else {
+		oauthAudience = "http://api.featurepeek.com/api/v1/"
+	}
 	data := url.Values{}
 	data.Set("scope", "offline_access")
-	data.Set("audience", "https://api.dev.featurepeek.com/api/v1")
+	data.Set("audience", oauthAudience)
 
 	statusCode, body, err := auth0PostForm("/device/code", data)
 	if err != nil {

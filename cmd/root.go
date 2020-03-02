@@ -67,6 +67,9 @@ func init() {
 
 	rootCmd.PersistentFlags().StringVar(&cfgFile, "config", "", "config file (default is $HOME/.peek.yaml)")
 	rootCmd.PersistentFlags().BoolVar(&debugFlag, "debug", false, "debug output")
+	rootCmd.PersistentFlags().BoolVar(&devFlag, "dev", false, "dev use")
+	rootCmd.PersistentFlags().MarkHidden("dev")
+	rootCmd.Flags().Bool("version", false, "Show peek version")
 
 	// Cobra also supports local flags, which will only run
 	// when this action is called directly.
@@ -95,6 +98,7 @@ Then run ` + "`peek`" + ` to launch your FeaturePeek environment.`
 
 var cfgFile string
 var debugFlag bool
+var devFlag bool
 
 // rootCmd represents the base command when called without any subcommands
 var rootCmd = &cobra.Command{
