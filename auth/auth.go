@@ -41,7 +41,7 @@ func (a Auth) Save() (err error) {
 }
 
 // LoadFromFile attempts to populate an Auth object from the tokens.json file.
-func LoadFromFile() (tokens *Auth) {
+func LoadFromFile() Auth {
 	home, err := homedir.Dir()
 	if err != nil {
 		log.Fatal(err)
@@ -57,8 +57,9 @@ func LoadFromFile() (tokens *Auth) {
 		}
 	}
 
-	if err = json.Unmarshal(data, tokens); err != nil {
-		log.Fatal(err)
+	var tokens Auth
+	if err = json.Unmarshal(data, &tokens); err != nil {
+		log.Fatalf("Unable to parse authorization file: %v.", err)
 	}
-	return
+	return tokens
 }
