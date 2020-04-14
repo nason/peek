@@ -157,8 +157,13 @@ var rootCmd = &cobra.Command{
 			log.Fatalf("%s is not currently a supported git hosting platform.\nContact us at support@featurepeek.com to request adding your git host!", endpoint.Host)
 		}
 
+		// TODO(landon): parse using regex and native git binary
 		slug := endpoint.Path[:len(endpoint.Path)-4]
 		splitSlug := strings.Split(slug, "/")
+		// Split off blank if http remote
+		if splitSlug[0] == "" {
+			splitSlug = splitSlug[1:]
+		}
 		org := splitSlug[0]
 		repo := splitSlug[1]
 
@@ -215,6 +220,10 @@ var rootCmd = &cobra.Command{
 		response, err := http.DefaultClient.Do(request)
 		if err != nil {
 			log.Fatal(err)
+		}
+
+		if response.StatusCode != http.StatusOK {
+			log.Fatalf("Upload Failed with status %d", response.StatusCode)
 		}
 
 		body = &bytes.Buffer{}
