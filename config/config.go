@@ -43,8 +43,8 @@ func (c Config) Save() (err error) {
 }
 
 // LoadFromFile attempts to populate a Config object from the peek.yml file.
-func LoadFromFile() Config {
-	data, err := ioutil.ReadFile("./peek.yml")
+func LoadFromFile(dir string) Config {
+	data, err := ioutil.ReadFile(dir + "/peek.yml")
 	if err != nil {
 		if os.IsNotExist(err) {
 			log.Fatal("No peek.yml config found.\n\nRun `peek init` to create one!")

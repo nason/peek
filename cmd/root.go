@@ -62,6 +62,7 @@ func init() {
 	versionOutput = fmt.Sprintf("peek version %s", rootCmd.Version)
 
 	rootCmd.PersistentFlags().StringVar(&cfgFile, "config", "", "config file (default is $HOME/.peek.yaml)")
+	rootCmd.PersistentFlags().StringVar(&targetDir, "dir", ".", "target directory to launch from")
 	rootCmd.PersistentFlags().BoolVar(&debugFlag, "debug", false, "debug output")
 	rootCmd.PersistentFlags().BoolVar(&devFlag, "dev", false, "dev use")
 	rootCmd.PersistentFlags().MarkHidden("dev")
@@ -93,6 +94,7 @@ Then run ` + "`peek`" + ` to launch your FeaturePeek environment.`
 var cfgFile string
 var debugFlag bool
 var devFlag bool
+var targetDir string
 
 // rootCmd represents the base command when called without any subcommands
 var rootCmd = &cobra.Command{
@@ -102,7 +104,7 @@ var rootCmd = &cobra.Command{
 	Run: func(cmd *cobra.Command, args []string) {
 		// Load auth and config files
 		tokens := auth.LoadFromFile()
-		peekConfig := config.LoadFromFile()
+		peekConfig := config.LoadFromFile(targetDir)
 
 		if peekConfig.Main.Type != "static" {
 			log.Fatal("FeaturePeek CLI does not currently support non-static configurations")
@@ -114,8 +116,12 @@ var rootCmd = &cobra.Command{
 			log.Fatal("Invalid Path for static assets in config.")
 		}
 
+		if targetDir != "" {
+			assetPath = filepath.Join(targetDir, assetPath)
+		}
+
 		// Read info out of local git repo
-		r, err := git.PlainOpen(".")
+		r, err := git.PlainOpen(targetDir)
 		if err != nil {
 			log.Fatalf("Cannot read git repository: %v", err)
 		}
@@ -178,26 +184,29 @@ var rootCmd = &cobra.Command{
 			fileNames = append(fileNames, filepath.Join(assetPath, file.Name()))
 		}
 
-		err = archiver.Archive(fileNames, "artifacts.tar.gz")
+		// Send ping
+		body := &bytes.Buffer{}
+		writer := multipart.NewWriter(body)
+		part, err := writer.CreateFormFile("artifacts", "artifacts.tar.gz")
 		if err != nil {
-			_ = os.Remove("artifacts.tar.gz")
 			log.Fatal(err)
 		}
 
-		// Send ping
-		file, err := os.Open("artifacts.tar.gz")
+		tmpDir := os.TempDir()
+		tmpFilename := filepath.Join(tmpDir, "artifacts.tar.gz")
+
+		err = archiver.Archive(fileNames, tmpFilename)
+		if err != nil {
+			log.Fatal(err)
+		}
+
+		file, err := os.Open(tmpFilename)
 		if err != nil {
 			log.Fatal(err)
 		}
 		defer file.Close()
-
-		body := &bytes.Buffer{}
-		writer := multipart.NewWriter(body)
-		part, err := writer.CreateFormFile("artifacts", file.Name())
-		if err != nil {
-			log.Fatal(err)
-		}
 		_, err = io.Copy(part, file)
+		os.Remove(tmpFilename)
 
 		writer.WriteField("app", "main")
 		writer.WriteField("service", "cli")
@@ -238,12 +247,6 @@ var rootCmd = &cobra.Command{
 		}
 		fmt.Println("Assets uploaded successfully!\nVisit your new feature environment here:")
 		fmt.Println(body)
-
-		// Clean up artifacts archive
-		err = os.Remove("artifacts.tar.gz")
-		if err != nil {
-			os.Exit(1)
-		}
 	},
 }
 
