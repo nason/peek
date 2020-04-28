@@ -218,7 +218,13 @@ var rootCmd = &cobra.Command{
 			log.Fatal(err)
 		}
 
-		request, err := http.NewRequest("POST", "https://api.dev.featurepeek.com/api/v1/peek", body)
+		var pingURL string
+		if devFlag {
+			pingURL = "https://api.dev.featurepeek.com/api/v1/peek"
+		} else {
+			pingURL = "https://api.featurepeek.com/api/v1/peek"
+		}
+		request, err := http.NewRequest("POST", pingURL, body)
 		request.Header.Add("authorization", fmt.Sprintf("Bearer %s", tokens.AccessToken))
 		request.Header.Add("X-FEATUREPEEK-CLIENT", Version)
 		request.Header.Set("Content-Type", writer.FormDataContentType())
