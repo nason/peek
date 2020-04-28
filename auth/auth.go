@@ -21,13 +21,12 @@ type Auth struct {
 
 // Save will marshall and save the auth in json to disk
 func (a Auth) Save() (err error) {
-	home, err := homedir.Dir()
+	configPath, err := peekConfigDir()
 	if err != nil {
 		return
 	}
-	path := filepath.Join(home, ".config", "peek")
-	os.MkdirAll(path, 0755)
-	tokensPath := filepath.Join(path, "tokens.json")
+	os.MkdirAll(configPath, 0755)
+	tokensPath := filepath.Join(configPath, "tokens.json")
 
 	data, err := json.Marshal(a)
 	if err != nil {
@@ -42,16 +41,16 @@ func (a Auth) Save() (err error) {
 
 // LoadFromFile attempts to populate an Auth object from the tokens.json file.
 func LoadFromFile() Auth {
-	home, err := homedir.Dir()
+	configDir, err := peekConfigDir()
 	if err != nil {
 		log.Fatal(err)
 	}
-	path := filepath.Join(home, ".config", "peek", "tokens.json")
+	path := filepath.Join(configDir, "tokens.json")
 
 	data, err := ioutil.ReadFile(path)
 	if err != nil {
 		if os.IsNotExist(err) {
-			log.Fatal("No authorization file found. Run `peek login` to authorize with your FeaturePeek account.")
+			log.Fatal("No credentials found. Run `peek login` to login with your FeaturePeek account.")
 		} else {
 			log.Fatalf("Unable to read authorization file: %v.", err)
 		}
@@ -62,4 +61,27 @@ func LoadFromFile() Auth {
 		log.Fatalf("Unable to parse authorization file: %v.", err)
 	}
 	return tokens
+}
+
+// RemoveFile attempts to remove the auth file from the filesystem
+func RemoveFile() {
+	// look for auth file
+	configDir, err := peekConfigDir()
+	if err != nil {
+		log.Fatal(err)
+	}
+	path := filepath.Join(configDir, "tokens.json")
+	err = os.Remove(path)
+	if err != nil && !os.IsNotExist(err) {
+		log.Fatalf("Unable to remove authorization file: %v.", err)
+	}
+}
+
+func peekConfigDir() (string, error) {
+	home, err := homedir.Dir()
+	if err != nil {
+		return "", err
+	}
+	return filepath.Join(home, ".config", "peek"), nil
+
 }
