@@ -28,11 +28,11 @@ import (
 	"os"
 	"path"
 	"peek/auth"
+	"peek/spinner"
 	"time"
 
 	"github.com/skratchdot/open-golang/open"
 	"github.com/spf13/cobra"
-	"github.com/tj/go-spin"
 	jose "gopkg.in/square/go-jose.v2"
 )
 
@@ -149,21 +149,7 @@ func loginCommand(cmd *cobra.Command, args []string) {
 	open.Start(resp.VerificationURIComplete)
 
 	// start spinner
-	spinnerTicker := time.NewTicker(100 * time.Millisecond)
-	spinnerDone := make(chan bool)
-
-	go func() {
-		s := spin.New()
-		for {
-			select {
-			case <-spinnerTicker.C:
-				fmt.Printf("\rLogging in... %s", s.Next())
-			case <-spinnerDone:
-				fmt.Printf("\rLogging in... done\n\n")
-				return
-			}
-		}
-	}()
+	spinnerDone := spinner.StartSpinning("Logging in")
 
 	// Grab jwks from Auth0
 	jwksBody, err := auth0Get(".well-known/jwks.json")
@@ -208,7 +194,6 @@ func loginCommand(cmd *cobra.Command, args []string) {
 	}
 
 	// stop spinner
-	spinnerTicker.Stop()
 	spinnerDone <- true
 
 	// verify jwt

@@ -30,6 +30,7 @@ import (
 	"path/filepath"
 	"peek/auth"
 	"peek/config"
+	"peek/spinner"
 	"runtime/debug"
 	"strings"
 
@@ -185,6 +186,8 @@ var rootCmd = &cobra.Command{
 		}
 
 		// Send ping
+		spinnerDone := spinner.StartSpinning("Packaging and Uploading")
+
 		body := &bytes.Buffer{}
 		writer := multipart.NewWriter(body)
 		part, err := writer.CreateFormFile("artifacts", "artifacts.tar.gz")
@@ -238,7 +241,7 @@ var rootCmd = &cobra.Command{
 		}
 
 		if response.StatusCode != http.StatusOK {
-			log.Fatalf("Upload Failed with status %d", response.StatusCode)
+			log.Fatalf("\nUpload Failed with status %d", response.StatusCode)
 		}
 
 		body = &bytes.Buffer{}
@@ -247,6 +250,10 @@ var rootCmd = &cobra.Command{
 		if err != nil {
 			log.Fatal(err)
 		}
+
+		// stop spinner
+		spinnerDone <- true
+
 		if debugFlag {
 			fmt.Println(response.StatusCode)
 			fmt.Println(response.Header)
