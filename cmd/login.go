@@ -21,6 +21,9 @@ package cmd
 import (
 	"encoding/json"
 	"fmt"
+	"github.com/skratchdot/open-golang/open"
+	"github.com/spf13/cobra"
+	jose "gopkg.in/square/go-jose.v2"
 	"io/ioutil"
 	"log"
 	"net/http"
@@ -29,11 +32,8 @@ import (
 	"path"
 	"peek/auth"
 	"peek/spinner"
+	"strings"
 	"time"
-
-	"github.com/skratchdot/open-golang/open"
-	"github.com/spf13/cobra"
-	jose "gopkg.in/square/go-jose.v2"
 )
 
 const devAuth0BaseURL = "https://featurepeek-dev.auth0.com"
@@ -43,6 +43,36 @@ const prodClientID = "oB2RkLUylDTrsSxVa6qdLR3DQMbdh9IR"
 
 var clientID string
 var auth0BaseURL string
+
+func userApiPostForm() {
+
+	var apiURL string
+	if devFlag {
+		apiURL = "https://api.dev.featurepeek.com/api/v1/user"
+	} else {
+		apiURL = "https://api.featurepeek.com/api/v1/user"
+	}
+
+	tokens := auth.LoadFromFile()
+
+	request, err := http.NewRequest("POST", apiURL, strings.NewReader(""))
+	request.Header.Add("authorization", fmt.Sprintf("Bearer %s", tokens.AccessToken))
+	request.Header.Add("X-FEATUREPEEK-CLIENT", Version)
+	if debugFlag {
+		fmt.Printf("%+v\n", request)
+	}
+
+	response, err := http.DefaultClient.Do(request)
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	if response.StatusCode != http.StatusOK &&
+		response.StatusCode != http.StatusCreated {
+		log.Fatalf("\n Call to FeaturePeek API failed %d", response.StatusCode)
+	}
+
+}
 
 func auth0PostForm(reqPath string, data url.Values) (int, []byte, error) {
 	if devFlag {
@@ -111,6 +141,7 @@ func fileExists(filename string) bool {
 }
 
 func loginCommand(cmd *cobra.Command, args []string) {
+
 	var oauthAudience string
 	if devFlag {
 		oauthAudience = "http://api.dev.featurepeek.com/api/v1/"
@@ -214,7 +245,12 @@ func loginCommand(cmd *cobra.Command, args []string) {
 	if err = tokens.Save(); err != nil {
 		log.Fatal(err)
 	}
+
+	// POST to /api/v1/user
+	userApiPostForm()
+
 	fmt.Println("Logged in to FeaturePeek")
+
 }
 
 // loginCmd represents the login command
