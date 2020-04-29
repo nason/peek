@@ -29,7 +29,7 @@ import (
 // initCmd represents the init command
 var initCmd = &cobra.Command{
 	Use:   "init",
-	Short: "Initialize a peek.yaml config",
+	Short: "Initialize a peek.yml config",
 	Long: `A longer description that spans multiple lines and likely contains examples
 and usage of using your command. For example:
 
