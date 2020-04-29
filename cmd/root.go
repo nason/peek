@@ -62,7 +62,7 @@ func init() {
 	rootCmd.AddCommand(versionCmd)
 	versionOutput = fmt.Sprintf("peek version %s", rootCmd.Version)
 
-	rootCmd.PersistentFlags().StringVar(&cfgFile, "config", "", "config file (default is $HOME/.peek.yaml)")
+	rootCmd.PersistentFlags().StringVar(&cfgFile, "config", "", "config file (default is $HOME/.config/peek/config.yaml)")
 	rootCmd.PersistentFlags().StringVar(&targetDir, "dir", ".", "target directory to launch from")
 	rootCmd.PersistentFlags().BoolVar(&debugFlag, "debug", false, "debug output")
 	rootCmd.PersistentFlags().BoolVar(&devFlag, "dev", false, "dev use")
@@ -295,7 +295,7 @@ func initConfig() {
 
 		// Search config in home directory with name ".peek" (without extension).
 		viper.AddConfigPath(home)
-		viper.SetConfigName(".peek")
+		viper.SetConfigName("peek")
 	}
 
 	viper.AutomaticEnv() // read in environment variables that match
