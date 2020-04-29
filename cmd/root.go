@@ -241,8 +241,7 @@ var rootCmd = &cobra.Command{
 		}
 
 		if response.StatusCode != http.StatusOK &&
-			response.StatusCode != http.StatusCreated &&
-			response.StatusCode != http.StatusSeeOther {
+			response.StatusCode != http.StatusCreated {
 			log.Fatalf("\nUpload Failed with status %d", response.StatusCode)
 		}
 
@@ -261,7 +260,7 @@ var rootCmd = &cobra.Command{
 			fmt.Println(response.Header)
 		}
 
-		if response.StatusCode == http.StatusSeeOther {
+		if response.StatusCode == http.StatusOK {
 			fmt.Println(body)
 		} else {
 			fmt.Println("Assets uploaded successfully!\nVisit your new feature environment here:")
