@@ -105,7 +105,11 @@ var rootCmd = &cobra.Command{
 	Run: func(cmd *cobra.Command, args []string) {
 		// Load auth and config files
 		tokens := auth.LoadFromFile()
-		peekService, serviceName := config.LoadStaticServiceFromFile(targetDir)
+		absTargetDir, err := filepath.Abs(targetDir)
+		if err != nil {
+			log.Fatalf("Invalid target directory: %v", err)
+		}
+		peekService, serviceName := config.LoadStaticServiceFromFile(absTargetDir)
 
 		if peekService == nil {
 			log.Fatal("Static app configuration not found")
@@ -263,7 +267,7 @@ var rootCmd = &cobra.Command{
 		if response.StatusCode == http.StatusOK {
 			fmt.Println(body)
 		} else {
-			fmt.Println("Assets uploaded successfully!\nVisit your new feature environment here:")
+			fmt.Println("\n\nAssets uploaded successfully!\nVisit your new feature environment here:")
 			fmt.Println(body)
 		}
 	},
