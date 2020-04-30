@@ -5,6 +5,7 @@ import (
 	"io/ioutil"
 	"log"
 	"os"
+	"path/filepath"
 
 	"gopkg.in/yaml.v2"
 )
@@ -62,19 +63,28 @@ func LoadFromFile(dir string) Config {
 	return config
 }
 
-// LoadStaticServiceFromFile attempts to populate a Service object from the peek.yml file.
-func LoadStaticServiceFromFile(dir string) (*Service, string) {
-	data, err := ioutil.ReadFile(dir + "/peek.yml")
+func findConfigFile(dir string) []byte {
+	data, err := ioutil.ReadFile(filepath.Join(dir, "peek.yml"))
 	if err != nil {
 		if os.IsNotExist(err) {
-			log.Fatal("No peek.yml config found.\n\nRun `peek init` to create one!")
+			if filepath.Dir(dir) == dir {
+				log.Fatal("No peek.yml config found.\n\nRun `peek init` to create one!")
+			} else {
+				return findConfigFile(filepath.Dir(dir))
+			}
 		} else {
 			log.Fatalf("Unable to read config file: %v.", err)
 		}
 	}
+	return data
+}
+
+// LoadStaticServiceFromFile attempts to populate a Service object from the peek.yml file.
+func LoadStaticServiceFromFile(dir string) (*Service, string) {
+	data := findConfigFile(dir)
 
 	var config map[string]interface{}
-	if err = yaml.Unmarshal(data, &config); err != nil {
+	if err := yaml.Unmarshal(data, &config); err != nil {
 		log.Fatalf("Unable to decode config file: %v.", err)
 	}
 
