@@ -105,13 +105,13 @@ var rootCmd = &cobra.Command{
 	Run: func(cmd *cobra.Command, args []string) {
 		// Load auth and config files
 		tokens := auth.LoadFromFile()
-		peekConfig := config.LoadFromFile(targetDir)
+		peekService, serviceName := config.LoadStaticServiceFromFile(targetDir)
 
-		if peekConfig.Main.Type != "static" {
-			log.Fatal("FeaturePeek CLI does not currently support non-static configurations")
+		if peekService == nil {
+			log.Fatal("Static app configuration not found")
 		}
 
-		assetPath := peekConfig.Main.Path
+		assetPath := peekService.Path
 
 		if assetPath == "" {
 			log.Fatal("Invalid Path for static assets in config.")
@@ -211,7 +211,7 @@ var rootCmd = &cobra.Command{
 		_, err = io.Copy(part, file)
 		os.Remove(tmpFilename)
 
-		writer.WriteField("app", "main")
+		writer.WriteField("app", serviceName)
 		writer.WriteField("service", "cli")
 		writer.WriteField("org", org)
 		writer.WriteField("repo", repo)
