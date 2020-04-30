@@ -244,24 +244,25 @@ var rootCmd = &cobra.Command{
 			log.Fatal(err)
 		}
 
-		if response.StatusCode != http.StatusOK &&
-			response.StatusCode != http.StatusCreated {
-			log.Fatalf("\nUpload Failed with status %d", response.StatusCode)
-		}
-
 		body = &bytes.Buffer{}
 		defer response.Body.Close()
 		_, err = body.ReadFrom(response.Body)
 		if err != nil {
 			log.Fatal(err)
 		}
-
 		// stop spinner
 		spinnerDone <- true
 
 		if debugFlag {
 			fmt.Println(response.StatusCode)
 			fmt.Println(response.Header)
+		}
+
+		if response.StatusCode != http.StatusOK &&
+			response.StatusCode != http.StatusCreated {
+			fmt.Printf("\n%s\n", body)
+			log.Fatalf("\nUpload Failed with status %d", response.StatusCode)
+
 		}
 
 		if response.StatusCode == http.StatusOK {
