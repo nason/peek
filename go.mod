@@ -12,6 +12,6 @@ require (
 	github.com/spf13/viper v1.6.1
 	github.com/tj/go-spin v1.1.0
 	golang.org/x/crypto v0.0.0-20200429183012-4b2356b1ed79 // indirect
-	gopkg.in/square/go-jose.v2 v2.5.0
+	gopkg.in/square/go-jose.v2 v2.5.1
 	gopkg.in/yaml.v2 v2.2.8
 )
