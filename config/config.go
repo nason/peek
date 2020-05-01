@@ -63,33 +63,25 @@ func LoadFromFile(dir string) Config {
 	return config
 }
 
-func findConfigFile(dir string) []byte {
-	data, err := ioutil.ReadFile(filepath.Join(dir, "peek.yml"))
+// LoadStaticServiceFromFile attempts to populate a Service object from the peek.yml file.
+func LoadStaticServiceFromFile(dir string) (string, string) {
+	configPath := filepath.Join(dir, "peek.yml")
+	data, err := ioutil.ReadFile(configPath)
 	if err != nil {
 		if os.IsNotExist(err) {
-			if filepath.Dir(dir) == dir {
-				log.Fatal("No peek.yml config found.\n\nRun `peek init` to create one!")
-			} else {
-				return findConfigFile(filepath.Dir(dir))
-			}
+			log.Fatal("No peek.yml config found.\n\nRun `peek init` to create one!")
 		} else {
 			log.Fatalf("Unable to read config file: %v.", err)
 		}
 	}
-	return data
-}
-
-// LoadStaticServiceFromFile attempts to populate a Service object from the peek.yml file.
-func LoadStaticServiceFromFile(dir string) (*Service, string) {
-	data := findConfigFile(dir)
 
 	var config map[string]interface{}
 	if err := yaml.Unmarshal(data, &config); err != nil {
 		log.Fatalf("Unable to decode config file: %v.", err)
 	}
 
-	var staticService *Service
-	var serviceName string
+	var staticServicePath string
+	var staticServiceName string
 
 	for k, v := range config {
 		if k == "version" {
@@ -98,7 +90,7 @@ func LoadStaticServiceFromFile(dir string) (*Service, string) {
 
 		s, ok := v.(map[interface{}]interface{})
 		if !ok {
-			log.Fatalln("Error parsing peek.yml")
+			continue
 		}
 
 		serviceConfig := make(map[string]string)
@@ -117,14 +109,13 @@ func LoadStaticServiceFromFile(dir string) (*Service, string) {
 		if !ok {
 			continue
 		}
+
 		if serviceType == "static" {
-			serviceName = k
-			staticService = new(Service)
-			staticService.Type = serviceType
-			staticService.Path = servicePath
+			staticServiceName = k
+			staticServicePath = servicePath
 			break
 		}
 	}
 
-	return staticService, serviceName
+	return staticServicePath, staticServiceName
 }

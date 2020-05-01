@@ -30,6 +30,7 @@ import (
 	"path/filepath"
 	"peek/auth"
 	"peek/config"
+	peekgit "peek/git"
 	"peek/spinner"
 	"runtime/debug"
 	"strings"
@@ -63,7 +64,7 @@ func init() {
 	versionOutput = fmt.Sprintf("peek version %s", rootCmd.Version)
 
 	rootCmd.PersistentFlags().StringVar(&cfgFile, "config", "", "config file (default is $HOME/.config/peek/config.yaml)")
-	rootCmd.PersistentFlags().StringVar(&targetDir, "dir", ".", "target directory to launch from")
+	rootCmd.PersistentFlags().StringVar(&targetDir, "dir", "", "target directory to launch from")
 	rootCmd.PersistentFlags().BoolVar(&debugFlag, "debug", false, "debug output")
 	rootCmd.PersistentFlags().BoolVar(&devFlag, "dev", false, "dev use")
 	rootCmd.PersistentFlags().MarkHidden("dev")
@@ -103,30 +104,34 @@ var rootCmd = &cobra.Command{
 	Short: "FeaturePeek Command-line Tool",
 	Long:  peekCommandLongDesc,
 	Run: func(cmd *cobra.Command, args []string) {
+		if targetDir != "" {
+			currentDir, err := os.Getwd()
+			if err != nil {
+				log.Fatalf("Could not get current directory: %v", err)
+			}
+			if err = os.Chdir(targetDir); err != nil {
+				log.Fatalf("Could not open target directory: %v", err)
+			}
+			defer os.Chdir(currentDir)
+		}
+
 		// Load auth and config files
 		tokens := auth.LoadFromFile()
-		absTargetDir, err := filepath.Abs(targetDir)
+		rootDir, err := peekgit.ToplevelDir()
 		if err != nil {
-			log.Fatalf("Invalid target directory: %v", err)
-		}
-		peekService, serviceName := config.LoadStaticServiceFromFile(absTargetDir)
-
-		if peekService == nil {
-			log.Fatal("Static app configuration not found")
+			log.Fatal(err)
 		}
 
-		assetPath := peekService.Path
+		servicePath, serviceName := config.LoadStaticServiceFromFile(rootDir)
 
-		if assetPath == "" {
-			log.Fatal("Invalid Path for static assets in config.")
+		if servicePath == "" {
+			log.Fatal("Static app configuration not found in peek.yml")
 		}
 
-		if targetDir != "" {
-			assetPath = filepath.Join(targetDir, assetPath)
-		}
+		assetPath := filepath.Join(rootDir, servicePath)
 
 		// Read info out of local git repo
-		r, err := git.PlainOpen(targetDir)
+		r, err := git.PlainOpen(rootDir)
 		if err != nil {
 			log.Fatalf("Cannot read git repository: %v", err)
 		}
@@ -138,7 +143,7 @@ var rootCmd = &cobra.Command{
 
 		// Cannot be in detatched HEAD state
 		if !headRef.Name().IsBranch() {
-			log.Fatal("Cannot find current branch. Environments must refence a branch")
+			log.Fatal("HEAD ref does not point to a branch. Checkout a branch before running.")
 		}
 
 		sha := headRef.Hash().String()
@@ -149,7 +154,7 @@ var rootCmd = &cobra.Command{
 		}
 
 		if originRev.String() != sha {
-			log.Fatal("Error: origin branch does not match local branch. You may need to push your changes.")
+			log.Fatal("Error: origin branch ref does not match local branch ref. You may need to push your changes.")
 		}
 
 		remote, err := r.Remote("origin")
@@ -181,7 +186,7 @@ var rootCmd = &cobra.Command{
 		// Archive web asset directory
 		files, err := ioutil.ReadDir(assetPath)
 		if err != nil {
-			log.Fatal(err)
+			log.Fatalf("Error reading directory: %v", err)
 		}
 
 		var fileNames []string
