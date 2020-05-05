@@ -22,15 +22,22 @@ to quickly create a Cobra application.`,
 	Run: func(cmd *cobra.Command, args []string) {
 		fmt.Print("Initializing peek.yml config for static app...\n\n")
 
-		var input string
+		var path_input string
 		fmt.Printf("Enter path of statically built assets, relative to repo root:\n--> ")
-		fmt.Scanln(&input)
+		fmt.Scanln(&path_input)
+
+		var spa_input string
+		fmt.Printf("Is your project a Single Page Application? (y/n)\n--> ")
+		fmt.Scanln(&spa_input)
+
+		yesResponses := []string{"y", "Y", "yes", "Yes", "YES", "true", "t", "1"}
 
 		peekConfig := config.Config{
 			Version: 2,
 			Main: config.Service{
 				Type: "static",
-				Path: input,
+				Path: path_input,
+				Spa:  containsString(yesResponses, spa_input),
 			},
 		}
 		if err := peekConfig.Save(); err != nil {
@@ -42,4 +49,18 @@ to quickly create a Cobra application.`,
 
 func init() {
 	rootCmd.AddCommand(initCmd)
+}
+
+func posString(slice []string, element string) int {
+	for index, elem := range slice {
+		if elem == element {
+			return index
+		}
+	}
+	return -1
+}
+
+// containsString returns true iff slice contains element
+func containsString(slice []string, element string) bool {
+	return !(posString(slice, element) == -1)
 }

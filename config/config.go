@@ -16,6 +16,7 @@ const configFile string = "peek.yml"
 type Service struct {
 	Type string
 	Path string
+	Spa  bool
 }
 
 // Config defines the configuration options for a FeaturePeek project
