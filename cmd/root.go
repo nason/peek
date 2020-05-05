@@ -3,6 +3,7 @@ package cmd
 
 import (
 	"bytes"
+	"crypto/md5"
 	"fmt"
 	"io"
 	"io/ioutil"
@@ -177,6 +178,25 @@ var rootCmd = &cobra.Command{
 			fileNames = append(fileNames, filepath.Join(assetPath, file.Name()))
 		}
 
+		hashdump := md5.New()
+		err = filepath.Walk(assetPath, func(path string, info os.FileInfo, err error) error {
+			if err != nil {
+				return err
+			}
+			if !info.Mode().IsRegular() {
+				return nil
+			}
+
+			data, err := ioutil.ReadFile(path)
+			if err != nil {
+				return err
+			}
+			io.WriteString(hashdump, string(data))
+			return nil
+		})
+
+		checksum := fmt.Sprintf("%x", hashdump.Sum(nil))
+
 		// Send ping
 		spinnerDone := spinner.StartSpinning("Packaging and Uploading")
 
@@ -209,6 +229,7 @@ var rootCmd = &cobra.Command{
 		writer.WriteField("repo", repo)
 		writer.WriteField("sha", sha)
 		writer.WriteField("branch", branch)
+		writer.WriteField("checksum", checksum)
 		if err = writer.Close(); err != nil {
 			log.Fatal(err)
 		}
