@@ -64,12 +64,27 @@ func CurrentBranch() (string, error) {
 	if errors.As(err, &cmdErr) {
 		if cmdErr.Stderr.Len() == 0 {
 			// Detached head
-			return "", errors.New("git: not on any branch")
+			return "", errors.New("not on a branch")
 		}
 	}
 
 	// Unknown error
 	return "", err
+}
+
+// CurrentSha returns the sha-1 hash the current HEAD commit
+func CurrentSha() (string, error) {
+	revCmd := GitCommand("rev-parse", "HEAD")
+	output, err := run.PrepareCmd(revCmd).Output()
+	return firstLine(output), err
+}
+
+// ShaForRemoteBranch return the commit hash of the given branch on the origin remote
+func ShaForRemoteBranch(branch string) (string, error) {
+	originRef := fmt.Sprintf("refs/remotes/origin/%s", branch)
+	refCmd := GitCommand("show-ref", originRef, "--hash")
+	output, err := run.PrepareCmd(refCmd).Output()
+	return firstLine(output), err
 }
 
 func listRemotes() ([]string, error) {
@@ -212,7 +227,6 @@ func ToplevelDir() (string, error) {
 	showCmd := exec.Command("git", "rev-parse", "--show-toplevel")
 	output, err := run.PrepareCmd(showCmd).Output()
 	return firstLine(output), err
-
 }
 
 func outputLines(output []byte) []string {
