@@ -14,14 +14,12 @@ import (
 	"path/filepath"
 	"peek/auth"
 	"peek/config"
-	peekgit "peek/git"
+	"peek/context"
+	"peek/git"
 	"peek/spinner"
 	"runtime/debug"
 	"strings"
 
-	"github.com/go-git/go-git/v5"
-	"github.com/go-git/go-git/v5/plumbing"
-	"github.com/go-git/go-git/v5/plumbing/transport"
 	"github.com/mholt/archiver/v3"
 	"github.com/spf13/cobra"
 
@@ -101,13 +99,12 @@ var rootCmd = &cobra.Command{
 
 		// Load auth and config files
 		tokens := auth.LoadFromFile()
-		rootDir, err := peekgit.ToplevelDir()
+		rootDir, err := git.ToplevelDir()
 		if err != nil {
 			log.Fatal(err)
 		}
 
 		servicePath, serviceName := config.LoadStaticServiceFromFile(rootDir)
-
 		if servicePath == "" {
 			log.Fatal("Static app configuration not found in peek.yml")
 		}
@@ -115,57 +112,37 @@ var rootCmd = &cobra.Command{
 		assetPath := filepath.Join(rootDir, servicePath)
 
 		// Read info out of local git repo
-		r, err := git.PlainOpen(rootDir)
+		branch, err := git.CurrentBranch()
 		if err != nil {
-			log.Fatalf("Cannot read git repository: %v", err)
+			log.Fatalf("Error: %v", err)
 		}
 
-		headRef, err := r.Head()
+		sha, err := git.CurrentSha()
 		if err != nil {
-			log.Fatalf("Cannot read git repository HEAD: %v", err)
+			log.Fatalf("Error: %v", err)
 		}
 
-		// Cannot be in detatched HEAD state
-		if !headRef.Name().IsBranch() {
-			log.Fatal("HEAD ref does not point to a branch. Checkout a branch before running.")
-		}
-
-		sha := headRef.Hash().String()
-		branch := headRef.Name().Short()
-		originRev, err := r.ResolveRevision(plumbing.Revision("refs/remotes/origin/" + branch))
+		originSha, err := git.ShaForRemoteBranch(branch)
 		if err != nil {
-			log.Fatalf("Error: local branch does not match origin - %s", err)
+			log.Fatalf("Error reading remote branch: %v", err)
 		}
 
-		if originRev.String() != sha {
-			log.Fatal("Error: origin branch ref does not match local branch ref. You may need to push your changes.")
+		if originSha != sha {
+			log.Fatal("Error: origin branch sha does not match local branch sha. You may need to push your changes.")
 		}
 
-		remote, err := r.Remote("origin")
+		remotes, err := context.GetRemotes()
 		if err != nil {
-			log.Fatalf("Error reading git remote `origin`: %v", err)
-		}
-		if err = remote.Config().Validate(); err != nil {
-			log.Fatalf("git config error: %v", err)
-		}
-		remoteURL := remote.Config().URLs[0]
-		endpoint, err := transport.NewEndpoint(remoteURL)
-		if err != nil {
-			log.Fatalf("git remote parse error: %v", err)
-		}
-		if endpoint.Host != "github.com" {
-			log.Fatalf("%s is not currently a supported git hosting platform.\nContact us at support@featurepeek.com to request adding your git host!", endpoint.Host)
+			log.Fatalf("Error: %v", err)
 		}
 
-		// TODO(landon): parse using regex and native git binary
-		slug := endpoint.Path[:len(endpoint.Path)-4]
-		splitSlug := strings.Split(slug, "/")
-		// Split off blank if http remote
-		if splitSlug[0] == "" {
-			splitSlug = splitSlug[1:]
+		originRemote, err := remotes.FindByName("origin")
+		if err != nil {
+			log.Fatal("Error: no remote named 'origin' found")
 		}
-		org := splitSlug[0]
-		repo := splitSlug[1]
+
+		org := originRemote.Owner
+		repo := originRemote.Repo
 
 		// Archive web asset directory
 		files, err := ioutil.ReadDir(assetPath)
@@ -178,24 +155,10 @@ var rootCmd = &cobra.Command{
 			fileNames = append(fileNames, filepath.Join(assetPath, file.Name()))
 		}
 
-		hashdump := md5.New()
-		err = filepath.Walk(assetPath, func(path string, info os.FileInfo, err error) error {
-			if err != nil {
-				return err
-			}
-			if !info.Mode().IsRegular() {
-				return nil
-			}
-
-			data, err := ioutil.ReadFile(path)
-			if err != nil {
-				return err
-			}
-			io.WriteString(hashdump, string(data))
-			return nil
-		})
-
-		checksum := fmt.Sprintf("%x", hashdump.Sum(nil))
+		checksum, err := dirChecksum(assetPath)
+		if err != nil {
+			log.Fatalf("Error reading directory: %v", err)
+		}
 
 		// Send ping
 		spinnerDone := spinner.StartSpinning("Packaging and Uploading")
@@ -317,4 +280,29 @@ func initConfig() {
 	if err := viper.ReadInConfig(); err == nil {
 		fmt.Println("Using config file:", viper.ConfigFileUsed())
 	}
+}
+
+func dirChecksum(dir string) (string, error) {
+	hashdump := md5.New()
+	err := filepath.Walk(dir, func(path string, info os.FileInfo, err error) error {
+		if err != nil {
+			return err
+		}
+		if !info.Mode().IsRegular() {
+			return nil
+		}
+
+		data, err := ioutil.ReadFile(path)
+		if err != nil {
+			return err
+		}
+		io.WriteString(hashdump, string(data))
+		return nil
+	})
+
+	if err != nil {
+		return "", err
+	}
+
+	return fmt.Sprintf("%x", hashdump.Sum(nil)), nil
 }
