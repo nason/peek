@@ -22,13 +22,13 @@ to quickly create a Cobra application.`,
 	Run: func(cmd *cobra.Command, args []string) {
 		fmt.Print("Initializing peek.yml config for static app...\n\n")
 
-		var path_input string
+		var pathInput string
 		fmt.Printf("Enter path of statically built assets, relative to repo root:\n--> ")
-		fmt.Scanln(&path_input)
+		fmt.Scanln(&pathInput)
 
-		var spa_input string
+		var spaInput string
 		fmt.Printf("Is your project a Single Page Application? (y/n)\n--> ")
-		fmt.Scanln(&spa_input)
+		fmt.Scanln(&spaInput)
 
 		yesResponses := []string{"y", "Y", "yes", "Yes", "YES", "true", "t", "1"}
 
@@ -36,8 +36,8 @@ to quickly create a Cobra application.`,
 			Version: 2,
 			Main: config.Service{
 				Type: "static",
-				Path: path_input,
-				Spa:  containsString(yesResponses, spa_input),
+				Path: pathInput,
+				Spa:  containsString(yesResponses, spaInput),
 			},
 		}
 		if err := peekConfig.Save(); err != nil {

@@ -28,7 +28,7 @@ const prodClientID = "oB2RkLUylDTrsSxVa6qdLR3DQMbdh9IR"
 var clientID string
 var auth0BaseURL string
 
-func userApiPostForm() {
+func userAPIPostForm() {
 
 	var apiURL string
 	if devFlag {
@@ -231,7 +231,7 @@ func loginCommand(cmd *cobra.Command, args []string) {
 	}
 
 	// POST to /api/v1/user
-	userApiPostForm()
+	userAPIPostForm()
 
 	fmt.Println("Logged in to FeaturePeek")
 
