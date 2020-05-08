@@ -13,9 +13,9 @@ import (
 	"os"
 	"path/filepath"
 	"peek/auth"
-	"peek/config"
 	"peek/context"
 	"peek/git"
+	"peek/peekconfig"
 	"peek/spinner"
 	"runtime/debug"
 	"strings"
@@ -104,7 +104,7 @@ var rootCmd = &cobra.Command{
 			log.Fatal(err)
 		}
 
-		servicePath, serviceName := config.LoadStaticServiceFromFile(rootDir)
+		servicePath, serviceName := peekconfig.LoadStaticServiceFromFile(rootDir)
 		if servicePath == "" {
 			log.Fatal("Static app configuration not found in peek.yml")
 		}

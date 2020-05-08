@@ -4,7 +4,8 @@ package cmd
 import (
 	"fmt"
 	"log"
-	"peek/config"
+	"peek/peekconfig"
+	"strings"
 
 	"github.com/spf13/cobra"
 )
@@ -20,24 +21,28 @@ Cobra is a CLI library for Go that empowers applications.
 This application is a tool to generate the needed files
 to quickly create a Cobra application.`,
 	Run: func(cmd *cobra.Command, args []string) {
-		fmt.Print("Initializing peek.yml config for static app...\n\n")
-
 		var pathInput string
-		fmt.Printf("Enter path of statically built assets, relative to repo root:\n--> ")
-		fmt.Scanln(&pathInput)
-
 		var spaInput string
-		fmt.Printf("Is your project a Single Page Application? (y/n)\n--> ")
-		fmt.Scanln(&spaInput)
 
-		yesResponses := []string{"y", "Y", "yes", "Yes", "YES", "true", "t", "1"}
+		fmt.Println("Initializing peek.yml config for static app...")
+		fmt.Println("\nEnter path of statically built assets, relative to repo root:")
+		for pathInput == "" {
+			fmt.Print("--> ")
+			fmt.Scanln(&pathInput)
+		}
 
-		peekConfig := config.Config{
+		fmt.Println("Is your project a Single Page Application? (y/n)")
+		for spaInput == "" {
+			fmt.Print("--> ")
+			fmt.Scanln(&spaInput)
+		}
+
+		peekConfig := peekconfig.Config{
 			Version: 2,
-			Main: config.Service{
+			Main: peekconfig.Service{
 				Type: "static",
 				Path: pathInput,
-				Spa:  containsString(yesResponses, spaInput),
+				Spa:  strings.ToLower(spaInput)[0] == 'y',
 			},
 		}
 		if err := peekConfig.Save(); err != nil {
@@ -49,18 +54,4 @@ to quickly create a Cobra application.`,
 
 func init() {
 	rootCmd.AddCommand(initCmd)
-}
-
-func posString(slice []string, element string) int {
-	for index, elem := range slice {
-		if elem == element {
-			return index
-		}
-	}
-	return -1
-}
-
-// containsString returns true iff slice contains element
-func containsString(slice []string, element string) bool {
-	return !(posString(slice, element) == -1)
 }
