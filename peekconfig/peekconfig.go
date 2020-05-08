@@ -1,4 +1,4 @@
-package config
+package peekconfig
 
 import (
 	"fmt"
@@ -43,25 +43,6 @@ func (c Config) Save() (err error) {
 	}
 
 	return
-}
-
-// LoadFromFile attempts to populate a Config object from the peek.yml file.
-func LoadFromFile(dir string) Config {
-	data, err := ioutil.ReadFile(dir + "/peek.yml")
-	if err != nil {
-		if os.IsNotExist(err) {
-			log.Fatal("No peek.yml config found.\n\nRun `peek init` to create one!")
-		} else {
-			log.Fatalf("Unable to read config file: %v.", err)
-		}
-	}
-
-	var config Config
-	if err = yaml.Unmarshal(data, &config); err != nil {
-		log.Fatalf("Unable to decode config file: %v.", err)
-	}
-
-	return config
 }
 
 // LoadStaticServiceFromFile attempts to populate a Service object from the peek.yml file.
