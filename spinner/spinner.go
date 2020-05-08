@@ -8,8 +8,9 @@ import (
 )
 
 // StartSpinning displays an async animated spinner with a message
-func StartSpinning(msg string) chan bool {
+func StartSpinning(msg string) func() {
 	ticker := time.NewTicker(100 * time.Millisecond)
+	stop := make(chan bool)
 	done := make(chan bool)
 
 	go func() {
@@ -18,13 +19,17 @@ func StartSpinning(msg string) chan bool {
 			select {
 			case <-ticker.C:
 				fmt.Printf("\r%s... %s", msg, s.Next())
-			case <-done:
+			case <-stop:
 				fmt.Printf("\r%s... done\n\n", msg)
 				ticker.Stop()
+				done <- true
 				return
 			}
 		}
 	}()
 
-	return done
+	return func() {
+		stop <- true
+		<-done
+	}
 }

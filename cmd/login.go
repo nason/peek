@@ -164,7 +164,7 @@ func loginCommand(cmd *cobra.Command, args []string) {
 	open.Start(resp.VerificationURIComplete)
 
 	// start spinner
-	spinnerDone := spinner.StartSpinning("Logging in")
+	stopSpinner := spinner.StartSpinning("Logging in")
 
 	// Grab jwks from Auth0
 	jwksBody, err := auth0Get(".well-known/jwks.json")
@@ -208,8 +208,7 @@ func loginCommand(cmd *cobra.Command, args []string) {
 		}
 	}
 
-	// stop spinner
-	spinnerDone <- true
+	stopSpinner()
 
 	// verify jwt
 	var tokens auth.Auth

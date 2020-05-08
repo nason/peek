@@ -128,7 +128,7 @@ var rootCmd = &cobra.Command{
 		}
 
 		if originSha != sha {
-			log.Fatal("Error: origin branch sha does not match local branch sha. You may need to push your changes.")
+			log.Fatal("Error: local commit HEAD does not match origin.\nYou may still need to push your changes.")
 		}
 
 		remotes, err := context.GetRemotes()
@@ -161,7 +161,7 @@ var rootCmd = &cobra.Command{
 		}
 
 		// Send ping
-		spinnerDone := spinner.StartSpinning("Packaging and Uploading")
+		stopSpinner := spinner.StartSpinning("Packaging and Uploading")
 
 		body := &bytes.Buffer{}
 		writer := multipart.NewWriter(body)
@@ -222,8 +222,8 @@ var rootCmd = &cobra.Command{
 		if err != nil {
 			log.Fatal(err)
 		}
-		// stop spinner
-		spinnerDone <- true
+
+		stopSpinner()
 
 		if debugFlag {
 			fmt.Println(response.StatusCode)
@@ -240,7 +240,7 @@ var rootCmd = &cobra.Command{
 		if response.StatusCode == http.StatusOK {
 			fmt.Println(body)
 		} else {
-			fmt.Println("\n\nAssets uploaded successfully!\nVisit your new feature environment here:")
+			fmt.Println("Assets uploaded successfully!\nVisit your new feature environment here:")
 			fmt.Println(body)
 		}
 	},
