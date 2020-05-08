@@ -63,17 +63,17 @@ var versionCmd = &cobra.Command{
 	},
 }
 
-const peekCommandLongDesc = `peek is a command-line tool for interacting with FeaturePeek environments.
+const peekCommandLongDesc = `peek is a command-line tool for interacting with FeaturePeek deployments.
 
 The FeaturePeek CLI enables front-end developers, designers, and product owners to interact with and review your changes
-by launching new running previews of the front-end code you are working on.
+by creating deployment previews of the front-end code you are working on.
 
-The goal of this tool is to enable launching new environments for every branch and commit, all without needing a CI system.
+The goal of this tool is to create deployment previews for any commit, all without needing a CI system.
 
-To get started simply run ` + "`peek login`" + `to authenticate locally and/or create an account.
+To get started, simply run ` + "`peek login`" + `to authenticate locally and/or create an account.
 Run ` + "`peek init`" + ` and enter your build directory to set up your config.
 Make sure your code pushed to your remote and run your build step.
-Then run ` + "`peek`" + ` to launch your FeaturePeek environment.`
+Then run ` + "`peek`" + ` to launch your FeaturePeek deployment.`
 
 var cfgFile string
 var debugFlag bool
@@ -241,7 +241,7 @@ var rootCmd = &cobra.Command{
 		if response.StatusCode == http.StatusOK {
 			fmt.Println(body)
 		} else {
-			fmt.Println("Assets uploaded successfully!\nVisit your new feature environment here:")
+			fmt.Println("Assets uploaded successfully!\nVisit your deployment preview here:")
 			fmt.Println(body)
 		}
 	},
