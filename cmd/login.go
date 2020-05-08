@@ -209,8 +209,6 @@ func loginCommand(cmd *cobra.Command, args []string) {
 		}
 	}
 
-	loginSpinner.Stop()
-
 	// verify jwt
 	var tokens auth.Auth
 	if err = json.Unmarshal(tokenBody, &tokens); err != nil {
@@ -230,9 +228,9 @@ func loginCommand(cmd *cobra.Command, args []string) {
 		log.Fatal(err)
 	}
 
-	// POST to /api/v1/user
 	userAPIPostForm()
 
+	loginSpinner.Stop()
 	fmt.Println("Logged in to FeaturePeek")
 
 }
