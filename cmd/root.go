@@ -161,7 +161,8 @@ var rootCmd = &cobra.Command{
 		}
 
 		// Send ping
-		stopSpinner := spinner.StartSpinning("Packaging and Uploading")
+		uploadSpinner := spinner.New("Packaging and Uploading")
+		uploadSpinner.Start()
 
 		body := &bytes.Buffer{}
 		writer := multipart.NewWriter(body)
@@ -223,7 +224,7 @@ var rootCmd = &cobra.Command{
 			log.Fatal(err)
 		}
 
-		stopSpinner()
+		uploadSpinner.Stop()
 
 		if debugFlag {
 			fmt.Println(response.StatusCode)
