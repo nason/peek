@@ -14,12 +14,12 @@ import (
 var initCmd = &cobra.Command{
 	Use:   "init",
 	Short: "Initialize a peek.yml config",
-	Long: `A longer description that spans multiple lines and likely contains examples
-and usage of using your command. For example:
+	Long: `Initialize a new peek.yml config.
 
-Cobra is a CLI library for Go that empowers applications.
-This application is a tool to generate the needed files
-to quickly create a Cobra application.`,
+This command will run the user through a wizard to determine what settings to use
+when creating the local peek.yml config file. Once the questions are answered, the new
+config file will be created in the local directory and it should be immedeately commited
+to git and pushed to remote.`,
 	Run: func(cmd *cobra.Command, args []string) {
 		var pathInput string
 		var spaInput string
