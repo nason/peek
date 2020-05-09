@@ -13,7 +13,7 @@ import (
 	"net/http"
 	"os"
 	"path/filepath"
-	"peek/auth"
+	"peek/config"
 	"peek/context"
 	"peek/git"
 	"peek/peekconfig"
@@ -24,9 +24,6 @@ import (
 	"github.com/mholt/archiver/v3"
 	"github.com/spf13/cobra"
 	"k8s.io/apimachinery/pkg/util/rand"
-
-	homedir "github.com/mitchellh/go-homedir"
-	"github.com/spf13/viper"
 )
 
 // Version is dynamically set by the toolchain.
@@ -35,8 +32,6 @@ var Version = "DEV"
 var versionOutput = ""
 
 func init() {
-	cobra.OnInitialize(initConfig)
-
 	if Version == "DEV" {
 		if info, ok := debug.ReadBuildInfo(); ok && info.Main.Version != "(devel)" {
 			Version = info.Main.Version
@@ -47,7 +42,6 @@ func init() {
 	rootCmd.AddCommand(versionCmd)
 	versionOutput = fmt.Sprintf("peek version %s", rootCmd.Version)
 
-	rootCmd.PersistentFlags().StringVar(&cfgFile, "config", "", "config file (default is $HOME/.config/peek/config.yaml)")
 	rootCmd.PersistentFlags().StringVar(&targetDir, "dir", "", "target directory to launch from")
 	rootCmd.PersistentFlags().BoolVar(&debugFlag, "debug", false, "debug output")
 	rootCmd.PersistentFlags().BoolVar(&devFlag, "dev", false, "dev use")
@@ -77,7 +71,6 @@ Run ` + "`peek init`" + ` and enter your build directory to set up your config.
 Make sure your code pushed to your remote and run your build step.
 Then run ` + "`peek`" + ` to launch your FeaturePeek deployment.`
 
-var cfgFile string
 var debugFlag bool
 var devFlag bool
 var targetDir string
@@ -88,6 +81,7 @@ var rootCmd = &cobra.Command{
 	Short: "FeaturePeek Command-line Tool",
 	Long:  peekCommandLongDesc,
 	Run: func(cmd *cobra.Command, args []string) {
+		var err error
 		if targetDir != "" {
 			currentDir, err := os.Getwd()
 			if err != nil {
@@ -100,7 +94,20 @@ var rootCmd = &cobra.Command{
 		}
 
 		// Load auth and config files
-		tokens := auth.LoadFromFile()
+		localConfig, err := config.LoadConfigFile(devFlag)
+		if err != nil {
+			if os.IsNotExist(err) {
+				log.Fatal("No credentials found. Run `peek login` to login with your FeaturePeek account.")
+			} else {
+				log.Fatalf("Error reading config file: %v", err)
+			}
+		}
+
+		tokens := localConfig.Auth
+		if tokens == nil {
+			log.Fatal("No credentials found. Run `peek login` to login with your FeaturePeek account.")
+		}
+
 		rootDir, err := git.ToplevelDir()
 		if err != nil {
 			log.Fatal(err)
@@ -237,7 +244,10 @@ var rootCmd = &cobra.Command{
 				Errors []string
 			}
 			if err = json.Unmarshal(resBody, &errorResponse); err != nil {
-				log.Fatalf("Upload failed with status %d", response.StatusCode)
+				if len(resBody) == 0 {
+					log.Fatalf("Upload failed with status %d", response.StatusCode)
+				}
+				log.Fatalf("Upload Failed with status %d - %s", response.StatusCode, string(resBody))
 			}
 			log.Fatalf("Upload Failed with status %d - %s", response.StatusCode, errorResponse.Errors)
 		}
@@ -266,32 +276,6 @@ func Execute() {
 	if err := rootCmd.Execute(); err != nil {
 		fmt.Println(err)
 		os.Exit(1)
-	}
-}
-
-// initConfig reads in config file and ENV variables if set.
-func initConfig() {
-	if cfgFile != "" {
-		// Use config file from the flag.
-		viper.SetConfigFile(cfgFile)
-	} else {
-		// Find home directory.
-		home, err := homedir.Dir()
-		if err != nil {
-			fmt.Println(err)
-			os.Exit(1)
-		}
-
-		// Search config in home directory with name ".peek" (without extension).
-		viper.AddConfigPath(home)
-		viper.SetConfigName("peek")
-	}
-
-	viper.AutomaticEnv() // read in environment variables that match
-
-	// If a config file is found, read it in.
-	if err := viper.ReadInConfig(); err == nil {
-		fmt.Println("Using config file:", viper.ConfigFileUsed())
 	}
 }
 

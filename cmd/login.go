@@ -11,6 +11,7 @@ import (
 	"os"
 	"path"
 	"peek/auth"
+	"peek/config"
 	"peek/spinner"
 	"strings"
 	"time"
@@ -28,16 +29,13 @@ const prodClientID = "oB2RkLUylDTrsSxVa6qdLR3DQMbdh9IR"
 var clientID string
 var auth0BaseURL string
 
-func userAPIPostForm() {
-
+func userAPIPostForm(tokens auth.Auth) {
 	var apiURL string
 	if devFlag {
 		apiURL = "https://api.dev.featurepeek.com/api/v1/user"
 	} else {
 		apiURL = "https://api.featurepeek.com/api/v1/user"
 	}
-
-	tokens := auth.LoadFromFile()
 
 	request, err := http.NewRequest("POST", apiURL, strings.NewReader(""))
 	request.Header.Add("authorization", fmt.Sprintf("Bearer %s", tokens.AccessToken))
@@ -53,9 +51,8 @@ func userAPIPostForm() {
 
 	if response.StatusCode != http.StatusOK &&
 		response.StatusCode != http.StatusCreated {
-		log.Fatalf("\n Call to FeaturePeek API failed %d", response.StatusCode)
+		log.Fatalf("\nCall to FeaturePeek API failed %d", response.StatusCode)
 	}
-
 }
 
 func auth0PostForm(reqPath string, data url.Values) (int, []byte, error) {
@@ -224,15 +221,16 @@ func loginCommand(cmd *cobra.Command, args []string) {
 		log.Fatal(err)
 	}
 
-	if err = tokens.Save(); err != nil {
+	// save auth to config
+	if err = config.SaveAuthToConfigFile(tokens, devFlag); err != nil {
 		log.Fatal(err)
 	}
 
-	userAPIPostForm()
+	// check in with the api
+	userAPIPostForm(tokens)
 
 	loginSpinner.Stop()
 	fmt.Println("Logged in to FeaturePeek")
-
 }
 
 // loginCmd represents the login command

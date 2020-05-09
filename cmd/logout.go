@@ -2,7 +2,7 @@ package cmd
 
 import (
 	"fmt"
-	"peek/auth"
+	"peek/config"
 
 	"github.com/spf13/cobra"
 )
@@ -18,7 +18,7 @@ var logoutCmd = &cobra.Command{
 	using the command-line tool.`,
 	Run: func(cmd *cobra.Command, args []string) {
 		fmt.Print("Logging out... ")
-		auth.RemoveFile()
+		config.RemoveAuthFromConfigFile(devFlag)
 		fmt.Print("done\n")
 	},
 }
