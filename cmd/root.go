@@ -9,6 +9,7 @@ import (
 	"io"
 	"io/ioutil"
 	"log"
+	"math/rand"
 	"mime/multipart"
 	"net/http"
 	"os"
@@ -20,10 +21,10 @@ import (
 	"peek/spinner"
 	"runtime/debug"
 	"strings"
+	"time"
 
 	"github.com/mholt/archiver/v3"
 	"github.com/spf13/cobra"
-	"k8s.io/apimachinery/pkg/util/rand"
 )
 
 // Version is dynamically set by the toolchain.
@@ -255,18 +256,18 @@ var rootCmd = &cobra.Command{
 		if response.StatusCode == http.StatusOK {
 			fmt.Println(string(resBody))
 		} else {
-			fmt.Printf("Assets uploaded successfully! %s\nVisit your deployment preview here: ", random_emoji())
-			fmt.Println(string(resBody))
+			fmt.Printf("Assets uploaded successfully! %s\n", randomEmoji())
+			fmt.Printf("Visit your deployment preview here: %s\n", string(resBody))
 		}
 	},
 }
 
-func random_emoji() string {
+func randomEmoji() string {
 	emoji := []string{
 		"🧡", "💛", "💚", "💙", "💜", "💖", "🆒", "🎉", "✨", "😄", "🚀", "😍", "😁", "💪", "😀", "🥳", "😎", "🤩", "🙌", "✌️", "🤘", "👌", "🤙", "👏", "🌈", "⭐️", "🌟", "💫", "⚡️", "🌶", "🍉", "🍕", "🍦", "🍭", "🍪", "🍻", "🏆", "🎖", "🏅", "🥇", "🏄‍♂️", "⛳️", "🎯", "🎇", "🌠", "🖖", "💯", "🎊", "📈", "🔮", "💎", "🔥", "🌻", "👩‍🎤", "👨‍🎤",
 	}
-	n := rand.Int() % len(emoji)
-	return emoji[n]
+	rand.Seed(time.Now().Unix())
+	return emoji[rand.Intn(len(emoji))]
 }
 
 // Execute adds all child commands to the root command and sets flags appropriately.
