@@ -79,6 +79,12 @@ func CurrentSha() (string, error) {
 	return firstLine(output), err
 }
 
+// GetUncommitedFiles fetches a list of untracked or dirty indexed files
+func GetUncommitedFiles() ([]byte, error) {
+	statusCmd := GitCommand("status", "--porcelain")
+	return run.PrepareCmd(statusCmd).Output()
+}
+
 // CheckForFileOnRemoteBranch looks for a file's existence on a remote branch
 func CheckForFileOnRemoteBranch(branch string, file string) error {
 	fileObject := fmt.Sprintf("origin/%s:%s", branch, file)

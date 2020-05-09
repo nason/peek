@@ -133,6 +133,15 @@ var rootCmd = &cobra.Command{
 			log.Fatal("peek.yml config not found on remote.\nMake sure to push your config file")
 		}
 
+		// warn for uncommited files
+		uncommitedFiles, err := git.GetUncommitedFiles()
+		if err != nil {
+			log.Fatal("Error reading git status")
+		}
+		if len(uncommitedFiles) > 0 {
+			showUncommitedChangesWarning()
+		}
+
 		sha, err := git.CurrentSha()
 		if err != nil {
 			log.Fatalf("Error: %v", err)
@@ -309,4 +318,21 @@ func dirChecksum(dir string) (string, error) {
 	}
 
 	return fmt.Sprintf("%x", hashdump.Sum(nil)), nil
+}
+
+func showUncommitedChangesWarning() {
+	var input string
+
+	fmt.Println("You have local uncommited changes.")
+	fmt.Println("\nIf they effect your deployment,\nthey will not be visible on your remote until you commit and push them.")
+	fmt.Println("\nWould you like to continue anyway? (y/n)")
+
+	for input == "" {
+		fmt.Print("--> ")
+		fmt.Scanln(&input)
+	}
+
+	if strings.ToLower(input)[0] != 'y' {
+		os.Exit(0)
+	}
 }
