@@ -4,6 +4,7 @@ package cmd
 import (
 	"bytes"
 	"crypto/md5"
+	"encoding/json"
 	"fmt"
 	"io"
 	"io/ioutil"
@@ -216,10 +217,9 @@ var rootCmd = &cobra.Command{
 		if err != nil {
 			log.Fatal(err)
 		}
-
-		body = &bytes.Buffer{}
 		defer response.Body.Close()
-		_, err = body.ReadFrom(response.Body)
+
+		resBody, err := ioutil.ReadAll(response.Body)
 		if err != nil {
 			log.Fatal(err)
 		}
@@ -231,18 +231,21 @@ var rootCmd = &cobra.Command{
 			fmt.Println(response.Header)
 		}
 
-		if response.StatusCode != http.StatusOK &&
-			response.StatusCode != http.StatusCreated {
-			fmt.Printf("\n%s\n", body)
-			log.Fatalf("\nUpload Failed with status %d", response.StatusCode)
-
+		if response.StatusCode != http.StatusOK && response.StatusCode != http.StatusCreated {
+			var errorResponse struct {
+				Errors []string
+			}
+			if err = json.Unmarshal(resBody, &errorResponse); err != nil {
+				log.Fatalf("Upload failed with status %d", response.StatusCode)
+			}
+			log.Fatalf("Upload Failed with status %d - %s", response.StatusCode, errorResponse.Errors)
 		}
 
 		if response.StatusCode == http.StatusOK {
-			fmt.Println(body)
+			fmt.Println(string(resBody))
 		} else {
 			fmt.Println("Assets uploaded successfully!\nVisit your deployment preview here:")
-			fmt.Println(body)
+			fmt.Println(string(resBody))
 		}
 	},
 }
