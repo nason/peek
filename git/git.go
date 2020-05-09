@@ -79,6 +79,13 @@ func CurrentSha() (string, error) {
 	return firstLine(output), err
 }
 
+// CheckForFileOnRemoteBranch looks for a file's existence on a remote branch
+func CheckForFileOnRemoteBranch(branch string, file string) error {
+	fileObject := fmt.Sprintf("origin/%s:%s", branch, file)
+	checkCmd := GitCommand("cat-file", "-e", fileObject)
+	return run.PrepareCmd(checkCmd).Run()
+}
+
 // ShaForRemoteBranch return the commit hash of the given branch on the origin remote
 func ShaForRemoteBranch(branch string) (string, error) {
 	originRef := fmt.Sprintf("refs/remotes/origin/%s", branch)

@@ -48,7 +48,8 @@ to quickly create a Cobra application.`,
 		if err := peekConfig.Save(); err != nil {
 			log.Fatal(err)
 		}
-		fmt.Println("Saved peek.yml config")
+		fmt.Println("\npeek.yml saved!")
+		fmt.Println("\nMake sure to commit and push this file before deploying a preview")
 	},
 }
 

@@ -127,6 +127,12 @@ var rootCmd = &cobra.Command{
 			log.Fatalf("Error: %v", err)
 		}
 
+		// make sure peek config exists on remote
+		err = git.CheckForFileOnRemoteBranch(branch, "peek.yml")
+		if err != nil {
+			log.Fatal("peek.yml config not found on remote.\nMake sure to push your config file")
+		}
+
 		sha, err := git.CurrentSha()
 		if err != nil {
 			log.Fatalf("Error: %v", err)
