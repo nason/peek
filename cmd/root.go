@@ -23,6 +23,7 @@ import (
 
 	"github.com/mholt/archiver/v3"
 	"github.com/spf13/cobra"
+	"k8s.io/apimachinery/pkg/util/rand"
 
 	homedir "github.com/mitchellh/go-homedir"
 	"github.com/spf13/viper"
@@ -244,10 +245,18 @@ var rootCmd = &cobra.Command{
 		if response.StatusCode == http.StatusOK {
 			fmt.Println(string(resBody))
 		} else {
-			fmt.Println("Assets uploaded successfully!\nVisit your deployment preview here:")
+			fmt.Printf("Assets uploaded successfully! %s\nVisit your deployment preview here: ", random_emoji())
 			fmt.Println(string(resBody))
 		}
 	},
+}
+
+func random_emoji() string {
+	emoji := []string{
+		"🧡", "💛", "💚", "💙", "💜", "💖", "🆒", "🎉", "✨", "😄", "🚀", "😍", "😁", "💪", "😀", "🥳", "😎", "🤩", "🙌", "✌️", "🤘", "👌", "🤙", "👏", "🌈", "⭐️", "🌟", "💫", "⚡️", "🌶", "🍉", "🍕", "🍦", "🍭", "🍪", "🍻", "🏆", "🎖", "🏅", "🥇", "🏄‍♂️", "⛳️", "🎯", "🎇", "🌠", "🖖", "💯", "🎊", "📈", "🔮", "💎", "🔥", "🌻", "👩‍🎤", "👨‍🎤",
+	}
+	n := rand.Int() % len(emoji)
+	return emoji[n]
 }
 
 // Execute adds all child commands to the root command and sets flags appropriately.
