@@ -64,7 +64,7 @@ func CurrentBranch() (string, error) {
 	if errors.As(err, &cmdErr) {
 		if cmdErr.Stderr.Len() == 0 {
 			// Detached head
-			return "", errors.New("not on a branch")
+			return "", errors.New("git: not on any branch")
 		}
 	}
 

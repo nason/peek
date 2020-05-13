@@ -27,14 +27,35 @@ func File(dev bool) string {
 	return path.Join(Dir(), filename)
 }
 
+// ReadConfigFile reads and returns the contents of the given file (mockable)
+var ReadConfigFile = func(filename string) ([]byte, error) {
+	f, err := os.Open(filename)
+	if err != nil {
+		return nil, err
+	}
+	defer f.Close()
+
+	data, err := ioutil.ReadAll(f)
+	if err != nil {
+		return nil, err
+	}
+
+	return data, nil
+}
+
 // Config represents the CLI configuration
 type Config struct {
 	Auth *auth.Auth `json:"auth"`
 }
 
-// LoadConfigFile reads the config file and returns a Config struct
-func LoadConfigFile(devFlag bool) (*Config, error) {
-	data, err := ioutil.ReadFile(File(devFlag))
+// LoadConfig will load the appropriate config given the dev flag
+func LoadConfig(devFlag bool) (*Config, error) {
+	return ParseConfigFile(File(devFlag))
+}
+
+// ParseConfigFile attempts to load the given config file
+func ParseConfigFile(filename string) (*Config, error) {
+	data, err := ReadConfigFile(filename)
 	if err != nil {
 		return nil, err
 	}

@@ -162,7 +162,7 @@ func loginCommand(cmd *cobra.Command, args []string) {
 
 	// start spinner
 	loginSpinner := spinner.New("Logging in")
-	loginSpinner.Start()
+	go loginSpinner.Start()
 
 	// Grab jwks from Auth0
 	jwksBody, err := auth0Get(".well-known/jwks.json")
