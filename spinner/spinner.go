@@ -13,6 +13,7 @@ type Spinner struct {
 	ticker  *time.Ticker
 	stop    chan bool
 	done    chan bool
+	frames  *spin.Spinner
 }
 
 // New creates a new instantiation of a Spinner
@@ -22,25 +23,24 @@ func New(message string) Spinner {
 		ticker:  time.NewTicker(100 * time.Millisecond),
 		stop:    make(chan bool),
 		done:    make(chan bool),
+		frames:  spin.New(),
 	}
 }
 
-// Start begins the spinner animation on a new goroutine
+// Start runs the spinner animation in an infinite loop
+//   do not run on the main goroutine
 func (s *Spinner) Start() {
-	go func() {
-		spinFrames := spin.New()
-		for {
-			select {
-			case <-s.ticker.C:
-				fmt.Printf("\r%s... %s", s.message, spinFrames.Next())
-			case <-s.stop:
-				fmt.Printf("\r%s... done\n\n", s.message)
-				s.ticker.Stop()
-				s.done <- true
-				return
-			}
+	for {
+		select {
+		case <-s.ticker.C:
+			fmt.Printf("\r%s... %s", s.message, s.frames.Next())
+		case <-s.stop:
+			fmt.Printf("\r%s... done\n\n", s.message)
+			s.ticker.Stop()
+			s.done <- true
+			return
 		}
-	}()
+	}
 }
 
 // Stop halts the spinner animation synchronously

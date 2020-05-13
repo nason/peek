@@ -95,7 +95,7 @@ var rootCmd = &cobra.Command{
 		}
 
 		// Load auth and config files
-		localConfig, err := config.LoadConfigFile(devFlag)
+		localConfig, err := config.LoadConfig(devFlag)
 		if err != nil {
 			if os.IsNotExist(err) {
 				log.Fatal("No credentials found. Run `peek login` to login with your FeaturePeek account.")
@@ -114,12 +114,20 @@ var rootCmd = &cobra.Command{
 			log.Fatal(err)
 		}
 
-		servicePath, serviceName := peekconfig.LoadStaticServiceFromFile(rootDir)
-		if servicePath == "" {
+		peekConfigFilename := filepath.Join(rootDir, "peek.yml")
+		service, err := peekconfig.LoadStaticServiceFromFile(peekConfigFilename)
+		if err != nil {
+			if os.IsNotExist(err) {
+				log.Fatal("No peek.yml config found.\n\nRun `peek init` to create one!")
+			} else {
+				log.Fatalf("Cannot read peek.yml config: %v.", err)
+			}
+		}
+		if service == nil {
 			log.Fatal("Static app configuration not found in peek.yml")
 		}
 
-		assetPath := filepath.Join(rootDir, servicePath)
+		assetPath := filepath.Join(rootDir, service.Path)
 
 		// Read info out of local git repo
 		branch, err := git.CurrentBranch()
@@ -187,7 +195,7 @@ var rootCmd = &cobra.Command{
 
 		// Send ping
 		uploadSpinner := spinner.New("Packaging and Uploading")
-		uploadSpinner.Start()
+		go uploadSpinner.Start()
 
 		body := &bytes.Buffer{}
 		writer := multipart.NewWriter(body)
@@ -212,7 +220,7 @@ var rootCmd = &cobra.Command{
 		_, err = io.Copy(part, file)
 		os.Remove(tmpFilename)
 
-		writer.WriteField("app", serviceName)
+		writer.WriteField("app", service.Name)
 		writer.WriteField("service", "cli")
 		writer.WriteField("org", org)
 		writer.WriteField("repo", repo)

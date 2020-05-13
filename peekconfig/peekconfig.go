@@ -3,9 +3,7 @@ package peekconfig
 import (
 	"fmt"
 	"io/ioutil"
-	"log"
 	"os"
-	"path/filepath"
 
 	"gopkg.in/yaml.v2"
 )
@@ -45,25 +43,25 @@ func (c Config) Save() (err error) {
 	return
 }
 
-// LoadStaticServiceFromFile attempts to populate a Service object from the peek.yml file.
-func LoadStaticServiceFromFile(dir string) (string, string) {
-	configPath := filepath.Join(dir, "peek.yml")
-	data, err := ioutil.ReadFile(configPath)
+// SimpleService is a simple representation of a service with a dynamic name
+type SimpleService struct {
+	Path string
+	Name string
+}
+
+// LoadStaticServiceFromFile attempts to populate a SimpleService struct from the peek.yml file.
+func LoadStaticServiceFromFile(filename string) (*SimpleService, error) {
+	data, err := ReadConfigFile(filename)
 	if err != nil {
-		if os.IsNotExist(err) {
-			log.Fatal("No peek.yml config found.\n\nRun `peek init` to create one!")
-		} else {
-			log.Fatalf("Unable to read config file: %v.", err)
-		}
+		return nil, err
 	}
 
 	var config map[string]interface{}
 	if err := yaml.Unmarshal(data, &config); err != nil {
-		log.Fatalf("Unable to decode config file: %v.", err)
+		return nil, err
 	}
 
-	var staticServicePath string
-	var staticServiceName string
+	var service *SimpleService
 
 	for k, v := range config {
 		if k == "version" {
@@ -93,11 +91,28 @@ func LoadStaticServiceFromFile(dir string) (string, string) {
 		}
 
 		if serviceType == "static" {
-			staticServiceName = k
-			staticServicePath = servicePath
+			service = new(SimpleService)
+			service.Name = k
+			service.Path = servicePath
 			break
 		}
 	}
 
-	return staticServicePath, staticServiceName
+	return service, nil
+}
+
+// ReadConfigFile reads and returns the contents of the given file (mockable)
+var ReadConfigFile = func(filename string) ([]byte, error) {
+	f, err := os.Open(filename)
+	if err != nil {
+		return nil, err
+	}
+	defer f.Close()
+
+	data, err := ioutil.ReadAll(f)
+	if err != nil {
+		return nil, err
+	}
+
+	return data, nil
 }
