@@ -72,6 +72,11 @@ Run ` + "`peek init`" + ` and enter your build directory to set up your config.
 Make sure your code pushed to your remote and run your build step.
 Then run ` + "`peek`" + ` to launch your FeaturePeek deployment.`
 
+const errorMessageCI = `CI environment detected.
+The peek CLI is meant to be used interactively at the command line.
+
+To use FeaturePeek in your CI pipeline, sign up for FeaturePeek Teams at https://featurepeek.com/product/teams`
+
 var debugFlag bool
 var devFlag bool
 var targetDir string
@@ -83,6 +88,12 @@ var rootCmd = &cobra.Command{
 	Long:  peekCommandLongDesc,
 	Run: func(cmd *cobra.Command, args []string) {
 		var err error
+
+		// check if running in CI
+		if os.Getenv("CI") != "" {
+			log.Fatalln(errorMessageCI)
+		}
+
 		if targetDir != "" {
 			currentDir, err := os.Getwd()
 			if err != nil {
