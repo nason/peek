@@ -49,8 +49,8 @@ type SimpleService struct {
 	Name string
 }
 
-// LoadStaticServiceFromFile attempts to populate a SimpleService struct from the peek.yml file.
-func LoadStaticServiceFromFile(filename string) (*SimpleService, error) {
+// LoadStaticServiceFromFile attempts to load a specific static service from the peek.yml file.
+func LoadStaticServiceFromFile(filename string, serviceName string) (*SimpleService, error) {
 	data, err := ReadConfigFile(filename)
 	if err != nil {
 		return nil, err
@@ -90,7 +90,7 @@ func LoadStaticServiceFromFile(filename string) (*SimpleService, error) {
 			continue
 		}
 
-		if serviceType == "static" {
+		if serviceType == "static" && (serviceName == "" || serviceName == k) {
 			service = new(SimpleService)
 			service.Name = k
 			service.Path = servicePath
@@ -99,6 +99,11 @@ func LoadStaticServiceFromFile(filename string) (*SimpleService, error) {
 	}
 
 	return service, nil
+}
+
+// LoadFromFile attempts to populate a SimpleService struct from the given peek.yml file.
+func LoadFromFile(filename string) (*SimpleService, error) {
+	return LoadStaticServiceFromFile(filename, "")
 }
 
 // ReadConfigFile reads and returns the contents of the given file (mockable)

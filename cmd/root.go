@@ -44,6 +44,7 @@ func init() {
 	versionOutput = fmt.Sprintf("peek version %s", rootCmd.Version)
 
 	rootCmd.PersistentFlags().StringVar(&targetDir, "dir", "", "target directory to launch from")
+	rootCmd.PersistentFlags().StringVar(&targetService, "service", "", "select specific front-end service to launch")
 	rootCmd.PersistentFlags().BoolVar(&debugFlag, "debug", false, "debug output")
 	rootCmd.PersistentFlags().BoolVar(&devFlag, "dev", false, "dev use")
 	rootCmd.PersistentFlags().MarkHidden("dev")
@@ -80,6 +81,7 @@ To use FeaturePeek in your CI pipeline, sign up for FeaturePeek Teams at https:/
 var debugFlag bool
 var devFlag bool
 var targetDir string
+var targetService string
 
 // rootCmd represents the base command when called without any subcommands
 var rootCmd = &cobra.Command{
@@ -126,7 +128,7 @@ var rootCmd = &cobra.Command{
 		}
 
 		peekConfigFilename := filepath.Join(rootDir, "peek.yml")
-		service, err := peekconfig.LoadStaticServiceFromFile(peekConfigFilename)
+		service, err := peekconfig.LoadStaticServiceFromFile(peekConfigFilename, targetService)
 		if err != nil {
 			if os.IsNotExist(err) {
 				log.Fatal("No peek.yml config found.\n\nRun `peek init` to create one!")
