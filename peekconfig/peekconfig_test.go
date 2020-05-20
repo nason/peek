@@ -8,7 +8,7 @@ import (
 
 func TestLoadStaticServiceFromFile_EmptyFile(t *testing.T) {
 	defer StubConfig(``)()
-	service, err := LoadStaticServiceFromFile("apeekdotyaml")
+	service, err := LoadStaticServiceFromFile("apeekdotyaml", "")
 	eq(t, err, nil)
 	var nilService *SimpleService
 	eq(t, service, nilService)
@@ -22,7 +22,7 @@ main:
   type: docker
   port: 80
 `)()
-	service, err := LoadStaticServiceFromFile("apeekdotyaml")
+	service, err := LoadStaticServiceFromFile("apeekdotyaml", "")
 	eq(t, err, nil)
 	var nilService *SimpleService
 	eq(t, service, nilService)
@@ -39,7 +39,7 @@ main:
 	path := "build"
 
 	defer StubConfig(fmt.Sprintf(configTmplStr, path))()
-	service, err := LoadStaticServiceFromFile("apeekdotyaml")
+	service, err := LoadStaticServiceFromFile("apeekdotyaml", "")
 	eq(t, err, nil)
 	if service == nil {
 		t.Fatal("Expected a SimpleService returned, got <nil>")
@@ -61,7 +61,33 @@ version: 2
 
 	config := fmt.Sprintf(configTmplStr, name, path)
 	defer StubConfig(config)()
-	service, err := LoadStaticServiceFromFile("apeekdotyaml")
+	service, err := LoadStaticServiceFromFile("apeekdotyaml", "")
+	eq(t, err, nil)
+	if service == nil {
+		t.Fatal("Expected a SimpleService returned, got <nil>")
+	}
+	eq(t, service.Name, name)
+	eq(t, service.Path, path)
+}
+
+func TestLoadStaticServiceFromFile_MultipleServices(t *testing.T) {
+	configTmplStr := `---
+version: 2
+
+main:
+  type: static
+  path: .
+
+%s:
+  type: static
+  path: %s
+`
+	name := "static-app"
+	path := "build"
+
+	config := fmt.Sprintf(configTmplStr, name, path)
+	defer StubConfig(config)()
+	service, err := LoadStaticServiceFromFile("apeekdotyaml", name)
 	eq(t, err, nil)
 	if service == nil {
 		t.Fatal("Expected a SimpleService returned, got <nil>")
